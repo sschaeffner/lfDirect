@@ -260,7 +260,8 @@ public class Lightify {
             int pos = 9 + (18 * i);
             byte[] idxB = new byte[2];
             byte[] nameB = new byte[16];
-            System.arraycopy(data, pos, idxB, 0, 18);
+            System.arraycopy(data, pos, idxB, 0, 2);
+            System.arraycopy(data, pos + 2, nameB, 0, 16);
 
             int idx = (idxB[1] << 8) + idxB[0];
             String name = new String(nameB, Charset.forName("ASCII"));
@@ -425,8 +426,6 @@ public class Lightify {
             e.printStackTrace();
         }
     }
-
-
 
 
     public static void outputBytes(byte[] bytes) {
