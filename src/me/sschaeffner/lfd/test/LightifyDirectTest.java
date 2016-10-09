@@ -1,47 +1,41 @@
 package me.sschaeffner.lfd.test;
 
-import me.sschaeffner.lfd.Light;
 import me.sschaeffner.lfd.Lightify;
+import me.sschaeffner.lfd.LightifyLight;
 import org.junit.Test;
 
 import java.io.IOException;
 
 /**
- * Created by s on 18/09/16.
+ * Connects to the bridge and executes a couple of simple commands.
+ *
+ * @author Simon Schäffner (simon.schaeffner@googlemail.com)
  */
 public class LightifyDirectTest {
     @Test
     public void testConnection() throws IOException {
-        Lightify l = new Lightify("192.168.0.18");
-        l.updateAllLightStatus();
+        final String BRIDGE_IP = "192.168.0.18";
+
+        Lightify lf = new Lightify(BRIDGE_IP);
+        lf.requestAllLightsStatus();
+        lf.requestGroupList();
+
+        System.out.println("LIGHTS");
+        System.out.println(lf.getLights());
+
+        System.out.println("GROUPS");
+        System.out.println(lf.getGroups());
+
+        LightifyLight li = lf.getLights().get(0);
+
+        li.sendLuminance((byte)100, (short)10);
+        //li.sendColour((byte)255, (byte)0, (byte)230, (short)0);
+        //li.sendTemperature((short)1000, (short)0);
+
         try {
-            Thread.sleep(1000);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-        for (Light li : l.getLights().values()) {
-            System.out.println("*****LIGHT*****");
-            System.out.println("name: " + li.getName());
-            System.out.println("address: 0x" + Long.toHexString(li.getAddress()));
-            li.setLuminance((byte)0x64, 0);
-            //li.setRGB((byte)100, (byte)0, (byte)100, 0);
-            li.setTemperature(2600, 0);
-        }
-
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void outputBytes(byte[] bytes) {
-        for (int i = 0; i < bytes.length; i++) {
-            byte b = bytes[i];
-            System.out.print("0x" + String.format("%02x", b) + " ");
-            if (i % 8 == 7) System.out.println();
-        }
-        System.out.println();
     }
 }
