@@ -77,6 +77,10 @@ public final class Lightify implements PacketReceiver {
         this.lastRequest = lastRequest;
     }
 
+    public void setLastRequestLight(LightifyLight lastRequestLight) {
+        this.lastRequestLight = lastRequestLight;
+    }
+
     byte getNextSequence() {
         return sequence++;
     }
@@ -122,9 +126,6 @@ public final class Lightify implements PacketReceiver {
                 break;
             case GROUP_INFO:
                 onGroupInfoPacket(packet);
-                break;
-            case LIGHT_STATUS:
-                onLightStatusPacket(packet);
                 break;
             case ALL_LIGHTS_STATUS:
                 onAllLightsStatusPacket(packet);
@@ -216,23 +217,6 @@ public final class Lightify implements PacketReceiver {
         }
         group.setName(name);
         group.setLights(lights);
-    }
-
-    private void onLightStatusPacket(byte[] packet) {
-        if (packet.length < 35) {
-            System.err.println("received packet but too short for light status packet");
-            return;
-        }
-
-        boolean on = packet[27] == (byte)0x01;
-        byte luminance = packet[28];
-        short temperature = (short)((packet[30] << 8) + packet[29]);
-        byte r = packet[31];
-        byte g = packet[32];
-        byte b = packet[33];
-        byte h = packet[34];//possibly hue?
-
-        throw new RuntimeException("Not implemented yet");
     }
 
     private void onAllLightsStatusPacket(byte[] packet) {

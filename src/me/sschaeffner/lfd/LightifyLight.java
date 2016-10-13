@@ -72,21 +72,6 @@ public class LightifyLight extends LightifyObject {
         lightify.sendPacket(packet);
     }
 
-    /**
-     * Sends a request to the bridge to return the current status of this light.
-     */
-    public void requestLightStatus() {
-        synchronized (lightify) {
-            if (lightify.getLastRequest() != LightifyRequest.NONE) {
-                System.err.println("cannot send new request while old request is still handled");
-                return;
-            }
-            lightify.setLastRequest(LightifyRequest.LIGHT_STATUS);
-            sendCommand(LightifyOpCodes.COMMAND_LIGHT_STATUS, new byte[0]);
-            lightify.waitForAnswer();
-        }
-    }
-
     void setName(String name) {
         this.name = name;
     }

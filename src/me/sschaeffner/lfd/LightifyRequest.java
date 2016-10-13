@@ -9,6 +9,5 @@ public enum LightifyRequest {
     NONE,
     GROUP_LIST,
     GROUP_INFO,
-    LIGHT_STATUS,
     ALL_LIGHTS_STATUS
 }

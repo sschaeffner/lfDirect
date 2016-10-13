@@ -30,7 +30,9 @@ public class LightifyDirectTest {
 
         li.sendLuminance((byte)100, (short)10);
         //li.sendColour((byte)255, (byte)0, (byte)230, (short)0);
-        //li.sendTemperature((short)1000, (short)0);
+        li.sendTemperature((short)1000, (short)0);
+
+        System.out.println(li);
 
         try {
             Thread.sleep(2000);
