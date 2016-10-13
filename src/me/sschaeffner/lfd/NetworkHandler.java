@@ -10,8 +10,8 @@ import java.net.Socket;
  *
  * @author Simon Schäffner (simon.schaeffner@googlemail.com)
  */
-final class LightifyNetworkHandler {
-    /* Default Lightify port */
+final class NetworkHandler {
+    /* Default LfdBridge port */
     private static final int PORT = 4000;
 
     /* PacketReceiver instance that all received packets are passed on to */
@@ -28,13 +28,13 @@ final class LightifyNetworkHandler {
 
 
     /**
-     * Constructs a new LightifyNetworkHandler.
+     * Constructs a new NetworkHandler.
      *
      * @param packetReceiver    an instance of a PacketReceiver
      * @param host              IP address to connect to (the bridge's ip address)
      * @throws IOException      when the connection cannot be established
      */
-    LightifyNetworkHandler(final PacketReceiver packetReceiver, String host) throws IOException {
+    NetworkHandler(final PacketReceiver packetReceiver, String host) throws IOException {
         this.packetReceiver = packetReceiver;
         this.socket = new Socket(host, PORT);
         this.os = socket.getOutputStream();
@@ -93,9 +93,6 @@ final class LightifyNetworkHandler {
      */
     void send(byte[] packet) {
         try {
-            System.out.println("%%% SEND %%%");
-            Lightify.outputBytes(packet);
-            System.out.println("%%%%%%%%%%%%");
             os.write(packet);
             os.flush();
         } catch (IOException e) {

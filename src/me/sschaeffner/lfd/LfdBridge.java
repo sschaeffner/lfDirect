@@ -12,60 +12,73 @@ import java.util.List;
  *
  * @author Simon Schäffner (simon.schaeffner@googlemail.com)
  */
-public final class Lightify implements PacketReceiver {
+public final class LfdBridge implements PacketReceiver {
+
+    /* logger */
+    private final LfdLogger logger;
 
     /* network handler */
-    private final LightifyNetworkHandler networkHandler;
+    private final NetworkHandler networkHandler;
 
     /* packet sequence: each packet sent has to have a sequence increased by one */
     private byte sequence;
 
     /* the type of request that was sent last and is still waiting for an answer */
-    private LightifyRequest lastRequest;
+    private LfdRequest lastRequest;
 
     /* map of all groups available on the bridge */
-    private HashMap<Short, LightifyGroup> groups;
+    private HashMap<Short, LfdGroup> groups;
 
     /* map of all lights available to the bridge */
-    private HashMap<Long, LightifyLight> lights;
+    private HashMap<Long, LfdLight> lights;
 
     /**
-     * Constructs a new Lightify object.
+     * Constructs a new LfdBridge object.
      *
-     * @param host          the IP address of the Lightify bridge
+     * @param host          the IP address of the bridge
+     * @param logger        a LfdLogger instance (can be null to disable logging)
      * @throws IOException  when the connection to the bridge cannot be established
      */
-    public Lightify(String host) throws IOException {
-        this.networkHandler = new LightifyNetworkHandler(this, host);
+    public LfdBridge(String host, LfdLogger logger) throws IOException {
+        this.logger = logger;
+        this.networkHandler = new NetworkHandler(this, host);
         this.sequence = 0;
-        this.lastRequest = LightifyRequest.NONE;
+        this.lastRequest = LfdRequest.NONE;
         this.groups = new HashMap<>();
         this.lights = new HashMap<>();
     }
 
     /**
+     * Constructs a new LfdBridge object.
+     *
+     * @param host          the IP address of the bridge
+     * @throws IOException  when the connection to the bridge cannot be established
+     */
+    public LfdBridge(String host) throws IOException {
+        this(host, null);
+    }
+
+    /**
      * Requests the bridge to return the current status of all lights.
      */
-    public synchronized void requestAllLightsStatus() {
-        if (this.lastRequest != LightifyRequest.NONE) {
-            System.err.println("cannot send new request while old request is still handled");
-            return;
+    public synchronized void requestAllLightsStatus() throws LfdException {
+        if (this.lastRequest != LfdRequest.NONE) {
+            throw new LfdException("cannot send new request while old request is still handled");
         }
-        lastRequest = LightifyRequest.ALL_LIGHTS_STATUS;
-        sendGlobalCommand(LightifyOpCodes.COMMAND_ALL_LIGHTS_STATUS, new byte[]{(byte)0x01});
+        lastRequest = LfdRequest.ALL_LIGHTS_STATUS;
+        sendGlobalCommand(LfdOpCodes.ALL_LIGHTS_STATUS, new byte[]{(byte)0x01});
         waitForAnswer();
     }
 
     /**
      * Requests the bridge to return a list of all groups.
      */
-    public synchronized void requestGroupList() {
-        if (this.lastRequest != LightifyRequest.NONE) {
-            System.err.println("cannot send new request while old request is still handled");
-            return;
+    public synchronized void requestGroupList() throws LfdException {
+        if (this.lastRequest != LfdRequest.NONE) {
+            throw new LfdException("cannot send new request while old request is still handled");
         }
-        lastRequest = LightifyRequest.GROUP_LIST;
-        sendGlobalCommand(LightifyOpCodes.COMMAND_GROUP_LIST, new byte[0]);
+        lastRequest = LfdRequest.GROUP_LIST;
+        sendGlobalCommand(LfdOpCodes.GROUP_LIST, new byte[0]);
         waitForAnswer();
     }
 
@@ -73,12 +86,8 @@ public final class Lightify implements PacketReceiver {
         networkHandler.send(packet);
     }
 
-    void setLastRequest(LightifyRequest lastRequest) {
+    void setLastRequest(LfdRequest lastRequest) {
         this.lastRequest = lastRequest;
-    }
-
-    public void setLastRequestLight(LightifyLight lastRequestLight) {
-        this.lastRequestLight = lastRequestLight;
     }
 
     byte getNextSequence() {
@@ -112,7 +121,7 @@ public final class Lightify implements PacketReceiver {
     synchronized void waitForAnswer() {
         try {
             this.wait();
-            lastRequest = LightifyRequest.NONE;
+            lastRequest = LfdRequest.NONE;
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -120,42 +129,42 @@ public final class Lightify implements PacketReceiver {
 
     @Override
     public void onPacketReceive(byte[] packet) {
-        switch (lastRequest) {
-            case GROUP_LIST:
-                onGroupListPacket(packet);
-                break;
-            case GROUP_INFO:
-                onGroupInfoPacket(packet);
-                break;
-            case ALL_LIGHTS_STATUS:
-                onAllLightsStatusPacket(packet);
-                break;
-            case NONE : default:
-                return;
+        try {
+            switch (lastRequest) {
+                case GROUP_LIST:
+                    onGroupListPacket(packet);
+                    break;
+                case GROUP_INFO:
+                    onGroupInfoPacket(packet);
+                    break;
+                case ALL_LIGHTS_STATUS:
+                    onAllLightsStatusPacket(packet);
+                    break;
+                case NONE : default:
+                    return;
+            }
+        } catch (LfdException e) {
+            logger.error(e.getMessage() + " " + e.getCause());
         }
     }
 
     @Override
     public boolean toBeNotifiedOnPacketReceived() {
-        return lastRequest != LightifyRequest.NONE;
+        return lastRequest != LfdRequest.NONE;
     }
 
-    private void onGroupListPacket(byte[] packet) {
+    private void onGroupListPacket(byte[] packet) throws LfdException {
         if (packet.length < 9) {
-            System.err.println("received packet but too short for a group list packet");
-            return;
+            throw new LfdException("received packet but too short for a group list packet");
         }
-
-        Lightify.outputBytes(packet);
 
         int groupAmount = (packet[8] << 8) + packet[7];
 
         if (packet.length < 9 + (18 * groupAmount)) {
-            System.err.println("corrupt group list packet: too short");
-            return;
+            throw new LfdException("corrupt group list packet: too short");
         }
 
-        HashMap<Short, LightifyGroup> newGroups = new HashMap<>();
+        HashMap<Short, LfdGroup> newGroups = new HashMap<>();
 
         for (int i = 0; i < groupAmount; i++) {
             int pos = 9 + (18 * i);
@@ -167,20 +176,19 @@ public final class Lightify implements PacketReceiver {
             String name = new String(nameAscii, Charset.forName("ASCII")).trim();
 
             if (groups.containsKey(id)) {
-                LightifyGroup existingGroup = groups.get(id);
+                LfdGroup existingGroup = groups.get(id);
                 existingGroup.setName(name);
                 newGroups.put(id, existingGroup);
             } else {
-                newGroups.put(id, new LightifyGroup(this, id, name));
+                newGroups.put(id, new LfdGroup(this, id, name));
             }
             groups = newGroups;
         }
     }
 
-    private void onGroupInfoPacket(byte[] packet) {
+    private void onGroupInfoPacket(byte[] packet) throws LfdException {
         if (packet.length < 26) {
-            System.err.println("received packet but too short for a group info packet");
-            return;
+            throw new LfdException("received packet but too short for a group info packet");
         }
         short id = (short) ((packet[8] << 8) + packet[7]);
 
@@ -191,8 +199,7 @@ public final class Lightify implements PacketReceiver {
         byte amountOfLights = packet[25];
 
         if (packet.length < 26 + (18*amountOfLights)) {
-            System.err.println("corrupt group info packet: too short");
-            return;
+            throw new LfdException("corrupt group info packet: too short");
         }
 
         HashSet<Long> lights = new HashSet<>();
@@ -209,27 +216,25 @@ public final class Lightify implements PacketReceiver {
             lights.add(address);
         }
 
-        LightifyGroup group;
+        LfdGroup group;
         if (groups.containsKey(id)) {
             group = groups.get(id);
         } else {
-            group = new LightifyGroup(this, id, name);
+            group = new LfdGroup(this, id, name);
         }
         group.setName(name);
         group.setLights(lights);
     }
 
-    private void onAllLightsStatusPacket(byte[] packet) {
+    private void onAllLightsStatusPacket(byte[] packet) throws LfdException {
         if (packet.length < 9) {
-            System.err.println("received packet but too short for all lights status packet");
-            return;
+            throw new LfdException("received packet but too short for all lights status packet");
         }
 
         int numberOfLights = (packet[8] << 8) + packet[7];
 
         if (packet.length < 9 + (50*numberOfLights)) {
-            System.err.println("corrupt all lights status packet: too short");
-            return;
+            throw new LfdException("corrupt all lights status packet: too short");
         }
 
         for (int i = 0; i < numberOfLights; i++) {
@@ -255,11 +260,11 @@ public final class Lightify implements PacketReceiver {
             System.arraycopy(packet, pos + 26, nameAscii, 0, 16);
             String name = new String(nameAscii, Charset.forName("ASCII")).trim();
 
-            LightifyLight light;
+            LfdLight light;
             if (lights.containsKey(address)) {
                 light = lights.get(address);
             } else {
-                light = new LightifyLight(this, address);
+                light = new LfdLight(this, address);
                 lights.put(address, light);
             }
 
@@ -280,7 +285,7 @@ public final class Lightify implements PacketReceiver {
      *
      * @return a list of groups known to the bridge
      */
-    public List<LightifyGroup> getGroups() {
+    public List<LfdGroup> getGroups() {
         return new ArrayList<>(groups.values());
     }
 
@@ -291,12 +296,16 @@ public final class Lightify implements PacketReceiver {
      *
      * @return a list of lights known registered with the bridge
      */
-    public List<LightifyLight> getLights() {
+    public List<LfdLight> getLights() {
         return new ArrayList<>(lights.values());
     }
 
-    LightifyRequest getLastRequest() {
+    LfdRequest getLastRequest() {
         return lastRequest;
+    }
+
+    LfdLogger getLogger() {
+        return logger;
     }
 
     /* convenience methods */
@@ -309,7 +318,7 @@ public final class Lightify implements PacketReceiver {
     public static void outputBytes(byte[] bytes) {
         for (int i = 0; i < bytes.length; i++) {
             byte b = bytes[i];
-            System.out.print("0x" + String.format("%02x", b) + " ");
+            System.out.println("0x" + String.format("%02x", b) + " ");
             if (i % 8 == 7) System.out.println();
         }
         System.out.println();

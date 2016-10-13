@@ -1,11 +1,11 @@
 package me.sschaeffner.lfd;
 
 /**
- * Which request was sent last to the bridge.
+ * Which request was sent to the bridge last.
  *
  * @author Simon Schäffner (simon.schaeffner@googlemail.com)
  */
-public enum LightifyRequest {
+enum LfdRequest {
     NONE,
     GROUP_LIST,
     GROUP_INFO,

@@ -5,7 +5,7 @@ package me.sschaeffner.lfd;
  *
  * @author Simon Schäffner (simon.schaeffner@googlemail.com)
  */
-public class LightifyLight extends LightifyObject {
+public class LfdLight extends LfdObject {
 
     /* light's unique address */
     private long address;
@@ -32,15 +32,15 @@ public class LightifyLight extends LightifyObject {
     private byte b;
 
     /**
-     * Constructs a new LightifyLight object.
+     * Constructs a new LfdLight object.
      *
-     * This method should only be called by the Lightify class.
+     * This method should only be called by the LfdBridge class.
      *
-     * @param lightify  a referency to the Lightify object
+     * @param lfdBridge a reference to the LfdBridge object
      * @param address   the light's unique address
      */
-    LightifyLight(Lightify lightify, long address) {
-        super(lightify);
+    LfdLight(LfdBridge lfdBridge, long address) {
+        super(lfdBridge);
         this.address = address;
     }
 
@@ -54,7 +54,7 @@ public class LightifyLight extends LightifyObject {
 
         byte flag = 0x00;
 
-        byte sequence = lightify.getNextSequence();
+        byte sequence = lfdBridge.getNextSequence();
 
         byte[] address = getAddressLittleEndian();
 
@@ -69,7 +69,7 @@ public class LightifyLight extends LightifyObject {
         System.arraycopy(address, 0, packet, 8, 8);
         System.arraycopy(data, 0, packet, 16, data.length);
 
-        lightify.sendPacket(packet);
+        lfdBridge.sendPacket(packet);
     }
 
     void setName(String name) {
@@ -119,7 +119,7 @@ public class LightifyLight extends LightifyObject {
 
     @Override
     public String toString() {
-        return "LightifyLight{" +
+        return "LfdLight{" +
                 "address=0x" + Long.toHexString(address) +
                 ", name='" + name + '\'' +
                 ", on=" + on +

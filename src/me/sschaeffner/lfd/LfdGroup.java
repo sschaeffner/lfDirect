@@ -7,7 +7,7 @@ import java.util.HashSet;
  *
  * @author Simon Schäffner (simon.schaeffner@googlemail.com)
  */
-public class LightifyGroup extends LightifyObject {
+public class LfdGroup extends LfdObject {
 
     /* group's unique identifier */
     private short id;
@@ -19,14 +19,14 @@ public class LightifyGroup extends LightifyObject {
     private HashSet<Long> lights;
 
     /**
-     * Constructs a new LightifyGroup object.
+     * Constructs a new LfdGroup object.
      *
-     * @param lightify  a reference to the Lightify object
-     * @param id       the group's unique id
+     * @param lfdBridge a reference to the LfdBridge object
+     * @param id        the group's unique id
      * @param name      the group's name
      */
-    LightifyGroup(Lightify lightify, short id, String name) {
-        super(lightify);
+    LfdGroup(LfdBridge lfdBridge, short id, String name) {
+        super(lfdBridge);
         this.id = id;
         this.name = name;
         this.lights = new HashSet<>();
@@ -42,7 +42,7 @@ public class LightifyGroup extends LightifyObject {
 
         byte flag = 0x02;
 
-        byte sequence = lightify.getNextSequence();
+        byte sequence = lfdBridge.getNextSequence();
 
         byte[] id = getIdLittleEndian();
 
@@ -57,27 +57,26 @@ public class LightifyGroup extends LightifyObject {
         System.arraycopy(id, 0, packet, 8, 2);
         System.arraycopy(data, 0, packet, 16, data.length);
 
-        lightify.sendPacket(packet);
+        lfdBridge.sendPacket(packet);
     }
 
     /**
      * Sends a request to the bridge to return all information about this group.
      */
-    public void requestGroupInfo() {
-        synchronized (lightify) {
-            if (lightify.getLastRequest() != LightifyRequest.NONE) {
-                System.err.println("cannot send new request while old request is still handled");
-                return;
+    public void requestGroupInfo() throws LfdException {
+        synchronized (lfdBridge) {
+            if (lfdBridge.getLastRequest() != LfdRequest.NONE) {
+                throw new LfdException("cannot send new request while old request is still handled");
             }
-            lightify.setLastRequest(LightifyRequest.GROUP_INFO);
-            sendCommand(LightifyOpCodes.COMMAND_GROUP_INFO, new byte[0]);
-            lightify.waitForAnswer();
+            lfdBridge.setLastRequest(LfdRequest.GROUP_INFO);
+            sendCommand(LfdOpCodes.GROUP_INFO, new byte[0]);
+            lfdBridge.waitForAnswer();
         }
     }
 
     @Override
     public String toString() {
-        return "LightifyGroup{" +
+        return "LfdGroup{" +
                 "id=0x" + Long.toHexString(id) +
                 ", name='" + name + '\'' +
                 ", lights=" + lights +

@@ -1,21 +1,21 @@
 package me.sschaeffner.lfd;
 
 /**
- * A lightify object. Either a single light or a group of lights.
+ * A lfd object. Either a single light or a group of lights.
  *
  * @author Simon Schäffner (simon.schaeffner@googlemail.com)
  */
-public abstract class LightifyObject {
+public abstract class LfdObject {
 
-    /* reference to the Lightify object */
-    protected final Lightify lightify;
+    /* reference to the LfdBridge object */
+    protected final LfdBridge lfdBridge;
 
     /**
      * Abstract class.
-     * @param lightify  reference to the Lightify object
+     * @param lfdBridge  reference to the LfdBridge object
      */
-    LightifyObject(Lightify lightify) {
-        this.lightify = lightify;
+    LfdObject(LfdBridge lfdBridge) {
+        this.lfdBridge = lfdBridge;
     }
 
     /**
@@ -32,7 +32,7 @@ public abstract class LightifyObject {
      */
     public void sendOnOff(boolean on) {
         byte onOff = on ? (byte)0x01 : (byte)0x00;
-        sendCommand(LightifyOpCodes.COMMAND_ONOFF, new byte[]{onOff});
+        sendCommand(LfdOpCodes.ONOFF, new byte[]{onOff});
     }
 
     /**
@@ -45,7 +45,7 @@ public abstract class LightifyObject {
         byte temperatureLo = (byte)(temperature & 0xFF);
         byte timeHi = (byte)((time >> 8) & 0xFF);
         byte timeLo = (byte)(time & 0xFF);
-        sendCommand(LightifyOpCodes.COMMAND_TEMPERATURE, new byte[]{temperatureLo, temperatureHi, timeLo, timeHi});
+        sendCommand(LfdOpCodes.TEMPERATURE, new byte[]{temperatureLo, temperatureHi, timeLo, timeHi});
     }
 
     /**
@@ -56,7 +56,7 @@ public abstract class LightifyObject {
     public void sendLuminance(byte luminance, short time) {
         byte timeHi = (byte)((time >> 8) & 0xFF);
         byte timeLo = (byte)(time & 0xFF);
-        sendCommand(LightifyOpCodes.COMMAND_LUMINANCE, new byte[]{luminance, timeLo, timeHi});
+        sendCommand(LfdOpCodes.LUMINANCE, new byte[]{luminance, timeLo, timeHi});
     }
 
     /**
@@ -69,6 +69,6 @@ public abstract class LightifyObject {
     public void sendColour(byte r, byte g, byte b, short time) {
         byte timeHi = (byte)((time >> 8) & 0xFF);
         byte timeLo = (byte)(time & 0xFF);
-        sendCommand(LightifyOpCodes.COMMAND_COLOUR, new byte[]{r, g, b, (byte)0xFF, timeLo, timeHi});
+        sendCommand(LfdOpCodes.COLOUR, new byte[]{r, g, b, (byte)0xFF, timeLo, timeHi});
     }
 }

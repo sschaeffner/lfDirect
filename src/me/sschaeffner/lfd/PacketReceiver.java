@@ -5,7 +5,7 @@ package me.sschaeffner.lfd;
  *
  * @author Simon Schäffner (simon.schaeffner@googlemail.com)
  */
-public interface PacketReceiver {
+interface PacketReceiver {
     void onPacketReceive(byte[] packet);
     boolean toBeNotifiedOnPacketReceived();
 }
