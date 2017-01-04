@@ -76,12 +76,10 @@ final class NetworkHandler {
         Runtime.getRuntime().addShutdownHook(new Thread(){
             @Override
             public void run() {
-                if (!socket.isClosed()) {
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                try {
+                    shutdown();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         });
@@ -97,6 +95,12 @@ final class NetworkHandler {
             os.flush();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    void shutdown() throws IOException {
+        if (!socket.isClosed()) {
+            socket.close();
         }
     }
 }

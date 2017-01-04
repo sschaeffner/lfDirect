@@ -16,7 +16,7 @@ import java.io.IOException;
 public class LfdTest {
     @Test
     public void testConnection() throws IOException {
-        final String BRIDGE_IP = "192.168.0.18";
+        final String BRIDGE_IP = "192.168.0.12";
 
         LoggerImpl log = new LoggerImpl(LoggerImpl.Loglevel.DEBUG);
         LfdBridge lf = new LfdBridge(BRIDGE_IP, log);
@@ -36,7 +36,7 @@ public class LfdTest {
 
         LfdLight li = lf.getLights().get(0);
 
-        li.sendLuminance((byte)0, (short)10);
+        li.sendLuminance((byte)20, (short)10);
         //li.sendColour((byte)255, (byte)0, (byte)230, (short)0);
         li.sendTemperature((short)1000, (short)0);
 

@@ -308,6 +308,10 @@ public final class LfdBridge implements PacketReceiver {
         return logger;
     }
 
+    public void shutdown() throws IOException {
+        networkHandler.shutdown();
+    }
+
     /* convenience methods */
 
     /**
